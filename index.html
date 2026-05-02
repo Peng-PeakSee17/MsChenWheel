@@ -136,6 +136,12 @@ body::before {
   font-size: 18px;
 }
 
+.info-encourage {
+  font-size: 12px;
+  margin-top: 1px;
+  opacity: 0.7;
+}
+
 .bottom-bar {
   z-index: 1;
   display: flex;
@@ -232,8 +238,16 @@ body::before {
   font-size: 26px;
   font-weight: 700;
   color: #E91E63;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
   line-height: 1.4;
+}
+
+.modal-encourage {
+  font-size: 13px;
+  color: #AD1457;
+  margin-bottom: 18px;
+  line-height: 1.5;
+  opacity: 0.8;
 }
 
 .modal-close {
@@ -378,12 +392,13 @@ body::before {
   <div class="wheel-wrapper" id="wheelWrapper">
     <div class="pointer"></div>
     <canvas id="wheelCanvas"></canvas>
-    <button class="center-btn" id="spinBtn" onclick="spin()">抽！</button>
+    <button class="center-btn" id="spinBtn" onclick="spin()">背！</button>
   </div>
 </div>
 
 <div class="info-bar" id="infoBar">
-  剩余 <span id="remainCount">26</span> / 26
+  还剩 <span id="remainCount">26</span> / 26 没背～
+  <div class="info-encourage" id="infoEncourage">冲冲冲！💪</div>
 </div>
 
 <div class="bottom-bar">
@@ -395,9 +410,10 @@ body::before {
 <div class="modal-overlay" id="resultModal">
   <div class="modal-card">
     <div class="modal-stars">✨ 🎉 ✨</div>
-    <div class="modal-title">恭喜抽中</div>
+    <div class="modal-title">今天背这个！</div>
     <div class="modal-topic" id="resultTopic"></div>
-    <button class="modal-close" onclick="closeResult()">知道了</button>
+    <div class="modal-encourage" id="resultEncourage"></div>
+    <button class="modal-close" onclick="closeResult()">背起来！</button>
   </div>
 </div>
 
@@ -405,8 +421,8 @@ body::before {
 <div class="modal-overlay" id="completeModal">
   <div class="modal-card modal-complete">
     <div class="modal-stars">🌟 🎊 🌟</div>
-    <div class="modal-title">太棒了！</div>
-    <div class="modal-topic">恭喜！全部主题已背完！</div>
+    <div class="modal-title">太厉害了！</div>
+    <div class="modal-topic">全部搞定！辛苦啦～<br>好好休息一下吧 💕</div>
     <button class="modal-close" onclick="closeComplete()">好耶！</button>
   </div>
 </div>
@@ -438,6 +454,21 @@ const MACARON_COLORS = [
   "#CFD8DC", "#FFECB3", "#B2EBF2", "#F3E5F5", "#E8F5E9",
   "#FFF3E0", "#E3F2FD", "#FCE4EC", "#EDE7F6", "#E0F7FA",
   "#FFF8E1"
+];
+
+const ENCOURAGE_MSGS = [
+  "你超棒的，背完这个就离上岸更近一步啦！",
+  "坚持就是胜利，你已经走了很远了！",
+  "慢慢来，不着急，每一个都算数～",
+  "背完这个奖励自己吃点好吃的！🍰",
+  "考研/考公人最酷了，加油鸭！",
+  "别给自己太大压力，能坚持到这里就很厉害了！",
+  "背一个少一个，胜利在望！",
+  "今天也是认真备考的一天，真了不起！",
+  "休息一下也没关系的，你已经很努力了～",
+  "稳住，你一定可以的！💖",
+  "每天进步一点点，上岸就是时间问题！",
+  "辛苦了，但也别忘了好好吃饭好好睡觉哦～"
 ];
 
 let remaining = [];
@@ -599,6 +630,16 @@ function updateInfo() {
   } else {
     btn.classList.remove('disabled');
   }
+
+  // Progress-based encouraging text
+  const done = 26 - remaining.length;
+  const el = document.getElementById('infoEncourage');
+  if (done === 0) el.textContent = '冲冲冲！💪';
+  else if (done < 7) el.textContent = '良好的开端！继续加油 ✨';
+  else if (done < 14) el.textContent = '已经过半啦！好厉害 🌟';
+  else if (done < 20) el.textContent = '快到终点了！冲刺！🏃‍♀️';
+  else if (done < 26) el.textContent = '就剩一点了！胜利在望 🎉';
+  else el.textContent = '全部搞定！太棒了！🎊';
 }
 
 function spin() {
@@ -656,6 +697,8 @@ function spin() {
 
 function showResult(topic, index) {
   document.getElementById('resultTopic').textContent = topic;
+  const msg = ENCOURAGE_MSGS[Math.floor(Math.random() * ENCOURAGE_MSGS.length)];
+  document.getElementById('resultEncourage').textContent = msg;
   document.getElementById('resultModal').classList.add('show');
   spawnConfetti();
 
