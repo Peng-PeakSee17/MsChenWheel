@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>领导专用素材转盘</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --pink: #FFB6C1;
+  --purple: #D8BFD8;
+  --mint: #B2DFDB;
+  --yellow: #FFF9C4;
+  --blue: #BBDEFB;
+  --peach: #FFCCBC;
+  --lavender: #E1BEE7;
+  --rose: #F8BBD0;
+  --bg-start: #FFF0F5;
+  --bg-end: #FDE2E4;
+}
+
+body {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,182,193,0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.header {
+  text-align: center;
+  padding: 8px 0 2px;
+  z-index: 1;
+  width: 100%;
+}
+
+.header h1 {
+  font-size: 22px;
+  color: #E91E63;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 1px 2px rgba(233,30,99,0.15);
+}
+
+.wheel-container {
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  padding: 2px 0;
+}
+
+.wheel-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+#wheelCanvas {
+  display: block;
+  max-width: 100%;
+}
+
+.center-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B9D, #E91E63);
+  border: 4px solid #fff;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(233,30,99,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+  z-index: 5;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.center-btn:active {
+  transform: translate(-50%, -50%) scale(0.92);
+}
+
+.center-btn.disabled {
+  background: linear-gradient(135deg, #ccc, #aaa);
+  box-shadow: none;
+  cursor: default;
+}
+
+.pointer {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 28px solid #E91E63;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  z-index: 6;
+}
+
+.info-bar {
+  z-index: 1;
+  text-align: center;
+  padding: 2px 0;
+  font-size: 15px;
+  color: #AD1457;
+  font-weight: 500;
+}
+
+.info-bar span {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.bottom-bar {
+  z-index: 1;
+  display: flex;
+  gap: 12px;
+  padding: 4px 16px 8px;
+  width: 100%;
+  max-width: 400px;
+  justify-content: center;
+}
+
+.btn-reset {
+  background: linear-gradient(135deg, #FF8A80, #E53935);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(229,57,53,0.3);
+  transition: transform 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn-reset:active { transform: scale(0.95); }
+
+.btn-history {
+  background: linear-gradient(135deg, #CE93D8, #9C27B0);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(156,39,176,0.3);
+  transition: transform 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn-history:active { transform: scale(0.95); }
+
+/* Result Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 32px 28px;
+  max-width: 300px;
+  width: 85%;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+  transform: scale(0.8) translateY(20px);
+  transition: transform 0.3s ease;
+  position: relative;
+}
+
+.modal-overlay.show .modal-card {
+  transform: scale(1) translateY(0);
+}
+
+.modal-stars {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.modal-title {
+  font-size: 14px;
+  color: #AD1457;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.modal-topic {
+  font-size: 26px;
+  font-weight: 700;
+  color: #E91E63;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.modal-close {
+  background: linear-gradient(135deg, #FF6B9D, #E91E63);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 12px 40px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(233,30,99,0.3);
+  transition: transform 0.15s ease;
+}
+
+.modal-close:active { transform: scale(0.95); }
+
+/* Complete Modal */
+.modal-complete .modal-topic {
+  font-size: 20px;
+  color: #4CAF50;
+}
+
+/* History Panel */
+.history-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  max-height: 60vh;
+  z-index: 90;
+  transform: translateY(100%);
+  transition: transform 0.35s ease;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+}
+
+.history-panel.show {
+  transform: translateY(0);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #F8BBD0;
+}
+
+.history-header h3 {
+  color: #E91E63;
+  font-size: 16px;
+}
+
+.history-close-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.history-list {
+  padding: 12px 20px 20px;
+  max-height: calc(60vh - 56px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #FCE4EC;
+  font-size: 15px;
+  color: #555;
+}
+
+.history-item:last-child { border-bottom: none; }
+
+.history-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B9D, #E91E63);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.history-name {
+  font-weight: 500;
+}
+
+/* History overlay */
+.history-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 89;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.history-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Confetti */
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  z-index: 101;
+  pointer-events: none;
+  animation: confetti-fall 2.5s ease-in forwards;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>领导专用素材转盘</h1>
+</div>
+
+<div class="wheel-container">
+  <div class="wheel-wrapper" id="wheelWrapper">
+    <div class="pointer"></div>
+    <canvas id="wheelCanvas"></canvas>
+    <button class="center-btn" id="spinBtn" onclick="spin()">抽！</button>
+  </div>
+</div>
+
+<div class="info-bar" id="infoBar">
+  剩余 <span id="remainCount">26</span> / 26
+</div>
+
+<div class="bottom-bar">
+  <button class="btn-reset" onclick="resetWheel()">重新开始</button>
+  <button class="btn-history" onclick="toggleHistory()">已抽列表</button>
+</div>
+
+<!-- Result Modal -->
+<div class="modal-overlay" id="resultModal">
+  <div class="modal-card">
+    <div class="modal-stars">✨ 🎉 ✨</div>
+    <div class="modal-title">恭喜抽中</div>
+    <div class="modal-topic" id="resultTopic"></div>
+    <button class="modal-close" onclick="closeResult()">知道了</button>
+  </div>
+</div>
+
+<!-- Complete Modal -->
+<div class="modal-overlay" id="completeModal">
+  <div class="modal-card modal-complete">
+    <div class="modal-stars">🌟 🎊 🌟</div>
+    <div class="modal-title">太棒了！</div>
+    <div class="modal-topic">恭喜！全部主题已背完！</div>
+    <button class="modal-close" onclick="closeComplete()">好耶！</button>
+  </div>
+</div>
+
+<!-- History Panel -->
+<div class="history-overlay" id="historyOverlay" onclick="toggleHistory()"></div>
+<div class="history-panel" id="historyPanel">
+  <div class="history-header">
+    <h3>📋 已抽中的主题</h3>
+    <button class="history-close-btn" onclick="toggleHistory()">✕</button>
+  </div>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+<script>
+const ALL_TOPICS = [
+  "一心为民", "理想信念", "爱岗敬业", "无私奉献", "坚持不懈",
+  "脚踏实地", "艰苦奋斗", "攻坚克难/斗争精神", "业精于勤/珍惜时间", "廉洁奉公/清正廉洁",
+  "责任担当", "淡泊名利", "扎根基层", "严以修身/严于律己", "对党忠诚",
+  "热爱祖国", "重视学习", "开拓创新", "大局意识", "注重细节",
+  "忧患意识/底线思维", "团队协作", "诚实守信", "方式方法", "正视压力",
+  "理性放弃/灵活变通"
+];
+
+const MACARON_COLORS = [
+  "#FFB6C1", "#D8BFD8", "#B2DFDB", "#FFF9C4", "#BBDEFB",
+  "#FFCCBC", "#E1BEE7", "#F8BBD0", "#C8E6C9", "#FFE0B2",
+  "#B3E5FC", "#DCEDC8", "#F0F4C3", "#FFCDD2", "#D1C4E9",
+  "#CFD8DC", "#FFECB3", "#B2EBF2", "#F3E5F5", "#E8F5E9",
+  "#FFF3E0", "#E3F2FD", "#FCE4EC", "#EDE7F6", "#E0F7FA",
+  "#FFF8E1"
+];
+
+let remaining = [];
+let drawn = [];
+let isSpinning = false;
+
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+let currentAngle = 0;
+let dpr = window.devicePixelRatio || 1;
+
+function init() {
+  loadState();
+  resizeCanvas();
+  drawWheel();
+  updateInfo();
+}
+
+function loadState() {
+  try {
+    const r = localStorage.getItem('wheel_remaining');
+    const d = localStorage.getItem('wheel_drawn');
+    if (r && d) {
+      remaining = JSON.parse(r);
+      drawn = JSON.parse(d);
+    } else {
+      remaining = [...ALL_TOPICS];
+      drawn = [];
+    }
+  } catch {
+    remaining = [...ALL_TOPICS];
+    drawn = [];
+  }
+}
+
+function saveState() {
+  localStorage.setItem('wheel_remaining', JSON.stringify(remaining));
+  localStorage.setItem('wheel_drawn', JSON.stringify(drawn));
+}
+
+function resizeCanvas() {
+  const container = document.getElementById('wheelWrapper').parentElement;
+  const size = Math.min(container.clientWidth - 16, 340);
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function drawWheel(rotationAngle) {
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
+  const cx = w / 2;
+  const cy = h / 2;
+  const r = Math.min(cx, cy) - 6;
+
+  ctx.clearRect(0, 0, w, h);
+
+  if (remaining.length === 0) {
+    // Draw empty state
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#F8BBD0';
+    ctx.fill();
+    ctx.strokeStyle = '#E91E63';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = '#E91E63';
+    ctx.font = '600 18px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('全部抽完啦！', cx, cy);
+    return;
+  }
+
+  const n = remaining.length;
+  const sliceAngle = (Math.PI * 2) / n;
+  const rot = rotationAngle || 0;
+
+  // Draw shadow
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy + 3, r, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.fill();
+  ctx.restore();
+
+  for (let i = 0; i < n; i++) {
+    const startAngle = rot + i * sliceAngle;
+    const endAngle = startAngle + sliceAngle;
+
+    // Slice
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = MACARON_COLORS[i % MACARON_COLORS.length];
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Text — vertical layout
+    const midAngle = startAngle + sliceAngle / 2;
+    const fontSize = n > 20 ? 9 : n > 14 ? 10 : n > 8 ? 11 : 13;
+    const charSpace = fontSize * 1.25;
+    const outerR = r * 0.9;
+    const innerR = 38;
+    const maxChars = Math.max(2, Math.floor((outerR - innerR) / charSpace));
+
+    const label = remaining[i];
+    let displayText = label;
+    if (displayText.length > maxChars) {
+      displayText = label.substring(0, maxChars - 1) + '…';
+    }
+
+    ctx.fillStyle = '#555';
+    ctx.font = `600 ${fontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const totalTextLen = (displayText.length - 1) * charSpace;
+    const textStartR = innerR + ((outerR - innerR) - totalTextLen) / 2 + totalTextLen;
+
+    for (let c = 0; c < displayText.length; c++) {
+      const charR = textStartR - c * charSpace;
+      const charX = cx + Math.cos(midAngle) * charR;
+      const charY = cy + Math.sin(midAngle) * charR;
+      ctx.fillText(displayText[c], charX, charY);
+    }
+  }
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = '#E91E63';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Center circle background
+  ctx.beginPath();
+  ctx.arc(cx, cy, 32, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#E91E63';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function updateInfo() {
+  document.getElementById('remainCount').textContent = remaining.length;
+  const btn = document.getElementById('spinBtn');
+  if (remaining.length === 0 || isSpinning) {
+    btn.classList.add('disabled');
+  } else {
+    btn.classList.remove('disabled');
+  }
+}
+
+function spin() {
+  if (isSpinning || remaining.length === 0) return;
+  isSpinning = true;
+  updateInfo();
+
+  const n = remaining.length;
+  const sliceAngle = (Math.PI * 2) / n;
+
+  // Pick a random winner
+  const winnerIndex = Math.floor(Math.random() * n);
+
+  // Target angle: the middle of the winner slice should align with the top (pointer)
+  // Pointer is at the top = -PI/2 in canvas coords
+  // We want: currentAngle + totalRotation + winnerIndex * sliceAngle + sliceAngle/2 ≡ -PI/2 (mod 2PI)
+  const targetSliceCenter = -Math.PI / 2;
+  const baseRotation = targetSliceCenter - winnerIndex * sliceAngle - sliceAngle / 2;
+  // Normalize to positive
+  const normBase = ((baseRotation % (Math.PI * 2)) + Math.PI * 4) % (Math.PI * 2);
+  // Add 5-8 full spins for drama
+  const fullSpins = (5 + Math.floor(Math.random() * 4)) * Math.PI * 2;
+  const totalRotation = fullSpins + normBase;
+
+  const startAngle = currentAngle;
+  const endAngle = startAngle + totalRotation;
+  const duration = 3500 + Math.random() * 1500; // 3.5-5s
+  const startTime = performance.now();
+
+  function easeOut(t) {
+    // Cubic ease out
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    const eased = easeOut(t);
+    const angle = startAngle + totalRotation * eased;
+
+    drawWheel(angle);
+
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      currentAngle = angle;
+      isSpinning = false;
+      // Show result
+      showResult(remaining[winnerIndex], winnerIndex);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+function showResult(topic, index) {
+  document.getElementById('resultTopic').textContent = topic;
+  document.getElementById('resultModal').classList.add('show');
+  spawnConfetti();
+
+  // Remove from remaining, add to drawn
+  remaining.splice(index, 1);
+  drawn.push(topic);
+  saveState();
+  updateInfo();
+}
+
+function closeResult() {
+  document.getElementById('resultModal').classList.remove('show');
+  drawWheel(currentAngle);
+
+  if (remaining.length === 0) {
+    setTimeout(() => {
+      document.getElementById('completeModal').classList.add('show');
+      spawnConfetti();
+    }, 300);
+  }
+}
+
+function closeComplete() {
+  document.getElementById('completeModal').classList.remove('show');
+}
+
+function resetWheel() {
+  if (isSpinning) return;
+  remaining = [...ALL_TOPICS];
+  drawn = [];
+  saveState();
+  currentAngle = 0;
+  drawWheel(0);
+  updateInfo();
+}
+
+function toggleHistory() {
+  const panel = document.getElementById('historyPanel');
+  const overlay = document.getElementById('historyOverlay');
+  const isOpen = panel.classList.contains('show');
+
+  if (isOpen) {
+    panel.classList.remove('show');
+    overlay.classList.remove('show');
+  } else {
+    renderHistory();
+    panel.classList.add('show');
+    overlay.classList.add('show');
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (drawn.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:#999;padding:20px;font-size:14px;">还没有抽中任何主题哦～</div>';
+    return;
+  }
+  list.innerHTML = drawn.map((t, i) =>
+    `<div class="history-item">
+      <span class="history-num">${i + 1}</span>
+      <span class="history-name">${t}</span>
+    </div>`
+  ).join('');
+}
+
+function spawnConfetti() {
+  const colors = ['#FFB6C1', '#E91E63', '#FF6B9D', '#CE93D8', '#B2DFDB', '#FFF9C4', '#BBDEFB', '#FFCCBC'];
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.top = '-10px';
+    el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (6 + Math.random() * 8) + 'px';
+    el.style.animationDuration = (2 + Math.random() * 2) + 's';
+    el.style.animationDelay = Math.random() * 0.5 + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+// Handle resize
+window.addEventListener('resize', () => {
+  dpr = window.devicePixelRatio || 1;
+  resizeCanvas();
+  drawWheel(currentAngle);
+});
+
+// Init
+init();
+</script>
+
+</body>
+</html>
