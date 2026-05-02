@@ -655,17 +655,15 @@ function spin() {
 
   // Target angle: the middle of the winner slice should align with the top (pointer)
   // Pointer is at the top = -PI/2 in canvas coords
-  // We want: currentAngle + totalRotation + winnerIndex * sliceAngle + sliceAngle/2 ≡ -PI/2 (mod 2PI)
-  const targetSliceCenter = -Math.PI / 2;
-  const baseRotation = targetSliceCenter - winnerIndex * sliceAngle - sliceAngle / 2;
-  // Normalize to positive
-  const normBase = ((baseRotation % (Math.PI * 2)) + Math.PI * 4) % (Math.PI * 2);
+  // finalAngle = startAngle + totalRotation
+  // We need: finalAngle + winnerIndex * sliceAngle + sliceAngle/2 ≡ -PI/2 (mod 2PI)
+  // So: totalRotation ≡ -PI/2 - startAngle - winnerIndex * sliceAngle - sliceAngle/2 (mod 2PI)
+  const startAngle = currentAngle;
+  const rawTarget = -Math.PI / 2 - startAngle - winnerIndex * sliceAngle - sliceAngle / 2;
+  const normTarget = ((rawTarget % (Math.PI * 2)) + Math.PI * 4) % (Math.PI * 2);
   // Add 5-8 full spins for drama
   const fullSpins = (5 + Math.floor(Math.random() * 4)) * Math.PI * 2;
-  const totalRotation = fullSpins + normBase;
-
-  const startAngle = currentAngle;
-  const endAngle = startAngle + totalRotation;
+  const totalRotation = fullSpins + normTarget;
   const duration = 3500 + Math.random() * 1500; // 3.5-5s
   const startTime = performance.now();
 
